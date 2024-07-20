@@ -10,6 +10,8 @@ import { TILE_SIZE } from "./mapConstants";
 import { loadCharacter } from "./slices/statusSlice";
 import { MY_CHARACTER_INIT_CONFIG } from "./characterConstants";
 import { update as updateAllCharactersData } from "./slices/allCharactersSlice";
+import { firebaseDatabase } from "../firebase/firebase";
+//import FirebaseListener from "./FirebaseListener";
 
 function MyCharacter({
   myCharactersData,
@@ -27,6 +29,10 @@ function MyCharacter({
     const users = {};
     const myId = MY_CHARACTER_INIT_CONFIG.id;
     users[myId] = myInitData;
+
+    //write to database
+    firebaseDatabase.ref("allCharacters").set(users);
+
     updateAllCharactersData(users);
   }, [webrtcSocket]);
 

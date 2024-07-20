@@ -5,6 +5,8 @@ import { MOVE_DIRECTIONS, MAP_DIMENSIONS, TILE_SIZE } from "./mapConstants";
 import { MY_CHARACTER_INIT_CONFIG } from "./characterConstants";
 import { checkMapCollision } from "./utils";
 import { update } from "./slices/allCharactersSlice"; // Correctly import the update action
+//import FirebaseListener from "../FirebaseListener";
+import { firebaseDatabase } from "../firebase/firebase";
 
 const GameLoop = ({ children, allCharactersData, updateAllCharactersData }) => {
   const canvasRef = useRef(null);
@@ -23,25 +25,33 @@ const GameLoop = ({ children, allCharactersData, updateAllCharactersData }) => {
     (e) => {
       const key = e.key.toLowerCase(); // Normalize key to lowercase
       if (MOVE_DIRECTIONS[key]) {
-        const [dx, dy] = MOVE_DIRECTIONS[key];
+        //if any of the keys are pressed
+        const [dx, dy] = MOVE_DIRECTIONS[key]; //get the direction ex. [0, -1] for up
         const newPosition = {
-          x: mycharacterData.position.x + dx,
-          y: mycharacterData.position.y + dy,
+          //this is a new position object
+          x: mycharacterData.position.x + dx, //add the direction to the current position
+          y: mycharacterData.position.y + dy, //add the direction to the current position
         };
 
         if (!checkMapCollision(newPosition.x, newPosition.y)) {
+          //uses the check map collision to make sure ur not colliding with obstacles or maps edge
           const updatedCharacterData = {
-            ...allCharactersData,
+            //creates a new object that updates teh position of the character while keeping the other data the same
+            ...allCharactersData, //copy the current character data
             [MY_CHARACTER_INIT_CONFIG.id]: {
-              ...mycharacterData,
-              position: newPosition,
+              //update the character data for the current character
+              ...mycharacterData, //copy the current character data
+              position: newPosition, //update the position
             },
           };
-          updateAllCharactersData(updatedCharacterData);
+          //firebase ref to update the character data
+          const myId = MY_CHARACTER_INIT_CONFIG.id;
+          firebaseDatabase.ref("allCharacters").set(newPosition);
+          updateAllCharactersData(updatedCharacterData); //update the character data
         }
       }
     },
-    [mycharacterData, allCharactersData, updateAllCharactersData]
+    [mycharacterData, allCharactersData, updateAllCharactersData] //dependencies
   );
 
   const tick = useCallback(() => {
