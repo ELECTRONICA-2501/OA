@@ -1,6 +1,6 @@
+// MyCharacter.js
 import React, { useEffect, useContext } from "react";
 import { connect } from "react-redux";
-
 import CanvasConext from "./CanvasContext";
 import {
   CHARACTER_IMAGE_SIZE,
@@ -10,8 +10,8 @@ import { TILE_SIZE } from "./mapConstants";
 import { loadCharacter } from "./slices/statusSlice";
 import { MY_CHARACTER_INIT_CONFIG } from "./characterConstants";
 import { update as updateAllCharactersData } from "./slices/allCharactersSlice";
+import { ref, set, remove, onValue } from "firebase/database";
 import { firebaseDatabase } from "../firebase/firebase";
-//import FirebaseListener from "./FirebaseListener";
 
 function MyCharacter({
   myCharactersData,
@@ -20,21 +20,52 @@ function MyCharacter({
   webrtcSocket,
 }) {
   const context = useContext(CanvasConext);
+
   useEffect(() => {
     const myInitData = {
       ...MY_CHARACTER_INIT_CONFIG,
       socketId: webrtcSocket.id,
     };
 
-    const users = {};
-    const myId = MY_CHARACTER_INIT_CONFIG.id;
-    users[myId] = myInitData;
+    set(
+      ref(firebaseDatabase, "users/" + MY_CHARACTER_INIT_CONFIG.id),
+      myInitData
+    );
 
-    //write to database
-    firebaseDatabase.ref("allCharacters").set(users);
+    const mycharacterRef = ref(
+      firebaseDatabase,
+      "users/" + MY_CHARACTER_INIT_CONFIG.id
+    );
 
-    updateAllCharactersData(users);
+    return () => {
+      remove(mycharacterRef)
+        .then(() => {
+          console.log("Remove succeeded.");
+        })
+        .catch((error) => {
+          console.log("Remove failed: " + error.message);
+        });
+    };
   }, [webrtcSocket]);
+
+  useEffect(() => {
+    const mycharacterRef = ref(
+      firebaseDatabase,
+      "users/" + MY_CHARACTER_INIT_CONFIG.id
+    );
+
+    onValue(mycharacterRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        updateAllCharactersData({ [MY_CHARACTER_INIT_CONFIG.id]: data });
+      }
+    });
+
+    return () => {
+      // Unsubscribe when component unmounts
+      mycharacterRef.off();
+    };
+  }, [updateAllCharactersData]);
 
   useEffect(() => {
     if (context == null || myCharactersData == null) {
