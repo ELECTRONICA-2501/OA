@@ -8,6 +8,7 @@ import { checkMapCollision } from "./utils";
 import { update } from "./slices/allCharactersSlice"; // Correctly import the update action
 import { ref, set, onValue } from "firebase/database";
 import { firebaseDatabase } from "../firebase/firebase";
+import FirebaseListener from "./FirebaseListener";
 
 const GameLoop = ({ children, allCharactersData, updateAllCharactersData }) => {
   const canvasRef = useRef(null);
@@ -41,11 +42,12 @@ const GameLoop = ({ children, allCharactersData, updateAllCharactersData }) => {
             },
           };
 
-          // Update the new position in Firebase
-          const myId = MY_CHARACTER_INIT_CONFIG.id;
-          set(ref(firebaseDatabase, `users/${myId}/position`), newPosition);
-
           updateAllCharactersData(updatedCharacterData);
+          const userRef = ref(
+            firebaseDatabase,
+            `users/${MY_CHARACTER_INIT_CONFIG.id}`
+          );
+          set(userRef, updatedCharacterData[MY_CHARACTER_INIT_CONFIG.id]);
         }
       }
     },
@@ -76,22 +78,6 @@ const GameLoop = ({ children, allCharactersData, updateAllCharactersData }) => {
     };
   }, [moveMyCharacter]);
 
-  useEffect(() => {
-    const allCharactersRef = ref(firebaseDatabase, "users/");
-
-    onValue(allCharactersRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        updateAllCharactersData(data);
-      }
-    });
-
-    return () => {
-      // Unsubscribe when component unmounts
-      allCharactersRef.off();
-    };
-  }, [updateAllCharactersData]);
-
   return (
     <CanvasContext.Provider value={context}>
       <canvas
@@ -100,6 +86,7 @@ const GameLoop = ({ children, allCharactersData, updateAllCharactersData }) => {
         height={TILE_SIZE * MAP_DIMENSIONS.ROWS}
         className="main-canvas"
       />
+      <FirebaseListener />
       {children}
     </CanvasContext.Provider>
   );
