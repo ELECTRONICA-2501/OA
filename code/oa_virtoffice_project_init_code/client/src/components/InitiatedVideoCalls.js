@@ -9,11 +9,7 @@ function InitiatedVideoCalls({
   othersSocketIds,
   webrtcSocket,
 }) {
-  const peer = new Peer({
-    initiator: true,
-    stream: myStream,
-    trickle: false,
-  });
+  const peer = new Peer({ initiator: true, stream: myStream, trickle: false });
   peer.on(
     "signal",
     (signal) => {
@@ -28,6 +24,19 @@ function InitiatedVideoCalls({
   );
   useEffect(() => {
     peerRef.current = createPeer(othersSocketIds, mySocketId, webrtcSocket);
+    //add logic for listening on the answer signal and make sure the signal is sent from callToUserId and print answer.
+    webrtcSocket.on(
+      "receiveAnswerSignal",
+      ({ callFromUserSocketId, answerSignal }) => {
+        console.log("Answer received from: ", callFromUserSocketId);
+        console.log(" Answer signal: ", answerSignal);
+        peer.signal(answerSignal); //peer.signal is a function that accepts an answer signal and sends it to the peer connection
+        //it works like a callback function that is called when the answer signal is received
+      }
+    );
+    return () => {
+      webrtcSocket.off("receiveAnswerSignal"); // this is to make sure that the event listener is removed when the component is unmounted
+    };
   }, [mySocketId, myStream, othersSocketIds, webrtcSocket]);
   return null;
 }

@@ -31,5 +31,21 @@ io.on("connection", (socket) => {
       });
     }
   );
+  //week 5 task: listen fro sendAnswerSignal and emit recieve Answer event to CallFromUserSocketId
+  socket.on(
+    "sendAnswerSignal",
+    ({ callToUserSocketId, callFromUserSocketId, answerSignal }) => {
+      console.log(
+        "sending answer-signal from",
+        callFromUserSocketId,
+        "to",
+        callToUserSocketId
+      );
+      io.to(callToUserSocketId).emit("receiveAnswerSignal", {
+        callFromUserSocketId,
+        answerSignal,
+      });
+    }
+  );
 });
 server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

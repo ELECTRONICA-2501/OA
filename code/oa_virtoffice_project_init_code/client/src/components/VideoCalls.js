@@ -4,6 +4,7 @@ import { connect } from "react-redux";
 import { MY_CHARACTER_INIT_CONFIG } from "./characterConstants";
 import InitiatedVideoCall from "./InitiatedVideoCall";
 import { webrtcSocket } from "../App";
+import ReceivedVideoCall from "./ReceivedVideoCall";
 
 function VideoCalls({ myCharacterData, otherCharactersData }) {
   const [myStream, setMyStream] = useState(); // this is the stream of my video
@@ -56,6 +57,27 @@ function VideoCalls({ myCharacterData, otherCharactersData }) {
                 myStream={myStream}
                 othersSocketId={initiateCallToUsers[otherUserId].socketId}
                 webrtcSocket={webrtcSocket}
+              />
+            );
+          })}
+          {Object.keys(offersRecieved).map((otherUserId) => {
+            const matchingUserIds = Object.keys(otherCharactersData).filter(
+              (otherUserId) =>
+                otherCharactersData[otherUserId].socketId === otherUserId
+            );
+            console.assert(
+              matchingUserIds.length === 1,
+              "unexpected number of users with the same socketId",
+              matchingUserIds
+            );
+            return (
+              <ReceivedVideoCall
+                key={otherUserId}
+                mySocketId={myCharacterData.socketId}
+                myStream={myStream}
+                othersSocketId={otherUserId}
+                webrtcSocket={webrtcSocket}
+                offerSignal={offersRecieved[otherUserId]}
               />
             );
           })}
