@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import MyVideo from "./MyVideo";
 import { connect } from "react-redux";
 import { MY_CHARACTER_INIT_CONFIG } from "./characterConstants";
-import InitiatedVideoCall from "./InitiatedVideoCall";
+import InitiatedVideoCalls from "./InitiatedVideoCalls";
+import ReceivedVideoCalls from "./ReceivedVideoCalls";
 import { webrtcSocket } from "../App";
 
 function VideoCalls({ myCharacterData, otherCharactersData }) {
@@ -50,12 +51,33 @@ function VideoCalls({ myCharacterData, otherCharactersData }) {
           <MyVideo myStream={myStream} />
           {Object.keys(initiateCallToUsers).map((otherUserId) => {
             return (
-              <InitiatedVideoCall
+              <InitiatedVideoCalls
                 key={initiateCallToUsers[otherUserId].socketId}
                 mySocketId={myCharacterData.socketId}
                 myStream={myStream}
                 othersSocketId={initiateCallToUsers[otherUserId].socketId}
                 webrtcSocket={webrtcSocket}
+              />
+            );
+          })}
+          {Object.keys(offersRecieved).map((othersSocketId) => {
+            const matchingUserIds = Object.keys(otherCharactersData).filter(
+              (otherUserId) =>
+                otherCharactersData[otherUserId].socketId === othersSocketId
+            );
+            console.assert(
+              matchingUserIds.length === 1,
+              "Unexpecting list of matching user ids",
+              matchingUserIds
+            );
+            return (
+              <ReceivedVideoCalls
+                key={othersSocketId}
+                mySocketId={myCharacterData.socketId}
+                myStream={myStream}
+                othersSocketId={othersSocketId}
+                webrtcSocket={webrtcSocket}
+                offerSignal={offersRecieved[othersSocketId]}
               />
             );
           })}
