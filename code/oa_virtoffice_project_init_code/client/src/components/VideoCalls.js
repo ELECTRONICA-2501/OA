@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import MyVideo from "./MyVideo";
 import { connect } from "react-redux";
 import { MY_CHARACTER_INIT_CONFIG } from "./characterConstants";
@@ -7,8 +7,10 @@ import ReceivedVideoCalls from "./ReceivedVideoCalls";
 import { webrtcSocket } from "../App";
 
 function VideoCalls({ myCharacterData, otherCharactersData }) {
-  const [myStream, setMyStream] = useState(); // this is the stream of my video
-  const [offersRecieved, setOffersRecieved] = useState({}); // this is the list of offers recieved from other users
+  const [myStream, setMyStream] = useState();
+  const [offersRecieved, setOffersRecieved] = useState({});
+  const [isInitiatingCall, setIsInitiatingCall] = useState(false);
+  const [nearbyCharacter, setNearbyCharacter] = useState(null);
 
   useEffect(() => {
     navigator.mediaDevices
@@ -20,12 +22,6 @@ function VideoCalls({ myCharacterData, otherCharactersData }) {
 
   useEffect(() => {
     webrtcSocket.on("receiveOffer", (payload) => {
-      console.log(
-        "received offer from ",
-        payload.callFromUserSocketId,
-        ", offerReceived: ",
-        Object.keys(offersRecieved)
-      );
       if (!Object.keys(offersRecieved).includes(payload.callFromUserSocketId)) {
         setOffersRecieved({
           ...offersRecieved,
@@ -33,54 +29,31 @@ function VideoCalls({ myCharacterData, otherCharactersData }) {
         });
       }
     });
-  }, [webrtcSocket, offersRecieved]); // this is the event listener for the offer signal
-
-  const myUserId = myCharacterData?.id;
-
-  const initiateCallToUsers = Object.keys(otherCharactersData)
-    .filter((othersUserId) => othersUserId >= myUserId)
-    .reduce((filteredObj, key) => {
-      filteredObj[key] = otherCharactersData[key];
-      return filteredObj;
-    }, {});
+  }, [webrtcSocket, offersRecieved]);
 
   return (
     <>
       {myCharacterData && myStream && (
         <div className="videos">
           <MyVideo myStream={myStream} />
-          {Object.keys(initiateCallToUsers).map((otherUserId) => {
-            return (
-              <InitiatedVideoCalls
-                key={initiateCallToUsers[otherUserId].socketId}
-                mySocketId={myCharacterData.socketId}
-                myStream={myStream}
-                othersSocketId={initiateCallToUsers[otherUserId].socketId}
-                webrtcSocket={webrtcSocket}
-              />
-            );
-          })}
-          {Object.keys(offersRecieved).map((othersSocketId) => {
-            const matchingUserIds = Object.keys(otherCharactersData).filter(
-              (otherUserId) =>
-                otherCharactersData[otherUserId].socketId === othersSocketId
-            );
-            console.assert(
-              matchingUserIds.length === 1,
-              "Unexpecting list of matching user ids",
-              matchingUserIds
-            );
-            return (
-              <ReceivedVideoCalls
-                key={othersSocketId}
-                mySocketId={myCharacterData.socketId}
-                myStream={myStream}
-                othersSocketId={othersSocketId}
-                webrtcSocket={webrtcSocket}
-                offerSignal={offersRecieved[othersSocketId]}
-              />
-            );
-          })}
+          {isInitiatingCall && (
+            <InitiatedVideoCalls
+              mySocketId={myCharacterData.socketId}
+              myStream={myStream}
+              othersSocketId={otherCharactersData[nearbyCharacter].socketId}
+              webrtcSocket={webrtcSocket}
+            />
+          )}
+          {Object.keys(offersRecieved).map((othersSocketId) => (
+            <ReceivedVideoCalls
+              key={othersSocketId}
+              mySocketId={myCharacterData.socketId}
+              myStream={myStream}
+              othersSocketId={othersSocketId}
+              webrtcSocket={webrtcSocket}
+              offerSignal={offersRecieved[othersSocketId]}
+            />
+          ))}
         </div>
       )}
     </>
