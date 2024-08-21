@@ -7,20 +7,21 @@ function InitiatedVideoCalls({
   othersSocketId,
   webrtcSocket,
 }) {
-  const peerRef = useRef(); // Reference to the peer connection
-  const videoRef = useRef(null); // Reference to the video element
-  const [remoteStream, setRemoteStream] = useState(null); // State to hold the remote stream
+  const peerRef = useRef();
+  const videoRef = useRef(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+  const [callRejected, setCallRejected] = useState(false);
 
   const createPeer = useCallback(
     (othersSocketId, mySocketId, myStream, webrtcSocket) => {
       const peer = new Peer({
-        initiator: true, // This peer initiates the connection
-        stream: myStream, // Send our stream to the remote peer
-        trickle: false, // Disable trickling ICE candidates
+        initiator: true,
+        stream: myStream,
+        trickle: false,
       });
 
       peer.on("signal", (signal) => {
-        // When this peer creates an offer signal, send it to the other user via the server
+        console.log("Initiating call, sending offer signal:", signal);
         webrtcSocket.emit("sendOffer", {
           callToUserSocketId: othersSocketId,
           callFromUserSocketId: mySocketId,
@@ -29,17 +30,16 @@ function InitiatedVideoCalls({
       });
 
       peer.on("stream", (stream) => {
-        // When we receive the remote stream, save it in state
-        setRemoteStream(stream);
+        console.log("Received remote stream:", stream);
+        setRemoteStream(stream); // Save the remote stream to state
       });
 
       return peer;
     },
-    [] // Dependencies array is empty so this function is stable and won't be redefined
+    []
   );
 
   useEffect(() => {
-    // Create the peer when this component mounts
     peerRef.current = createPeer(
       othersSocketId,
       mySocketId,
@@ -47,39 +47,43 @@ function InitiatedVideoCalls({
       webrtcSocket
     );
 
-    // Listen for the answer signal from the remote peer via the server
     webrtcSocket.on(
       "receiveClient2sAnswerSignalFromServer",
       ({ callFromUserSocketId, answerSignal }) => {
-        console.log(
-          "Received client2s answer signal from server",
-          callFromUserSocketId
-        );
-        // Pass the answer signal to the peer to complete the connection
+        console.log("Received answer signal from server:", answerSignal);
+        if (callRejected) return;
         peerRef.current.signal(answerSignal);
       }
     );
 
-    // Clean up when the component unmounts
+    webrtcSocket.on("callDeclined", () => {
+      setCallRejected(true);
+      console.log("The call was declined");
+    });
+
     return () => {
-      webrtcSocket.off("receiveClient2sAnswerSignalFromServer"); // Stop listening for answer signals
+      webrtcSocket.off("receiveClient2sAnswerSignalFromServer");
+      webrtcSocket.off("callDeclined");
       if (peerRef.current) {
-        peerRef.current.destroy(); // Clean up the peer connection
+        peerRef.current.destroy();
       }
     };
-  }, [mySocketId, myStream, othersSocketId, webrtcSocket]); // Effect dependencies
+  }, [mySocketId, myStream, othersSocketId, webrtcSocket, callRejected]);
 
   useEffect(() => {
-    // When we have the remote stream, set it as the source for the video element
     if (videoRef.current && remoteStream) {
       videoRef.current.srcObject = remoteStream;
     }
-  }, [remoteStream]); // Run this effect whenever the remote stream changes
+  }, [remoteStream]);
+
+  if (callRejected) {
+    return <p>The call was rejected</p>;
+  }
 
   return <video ref={videoRef} autoPlay playsInline />;
 
   /* Old Code:
-
+  
   // const peerRef = useRef();
   // const [stream, setRemoteStream] = useState(null);
   // const createPeer = useCallback((othersSocketId, mySocketId, myStream, webrtcSocket, isCaller) => {

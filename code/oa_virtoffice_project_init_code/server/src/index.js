@@ -13,11 +13,12 @@ const PORT = process.env.PORT || 8080;
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
-// this is the event handler for client1 sending offer signal to client2
+
 io.on("connection", (socket) => {
   socket.emit("me", socket.id);
+
   socket.on(
-    "send offer-signal",
+    "sendOffer",
     ({ callToUserSocketId, callFromUserSocketId, offerSignal }) => {
       console.log(
         "sending offer-signal from",
@@ -32,10 +33,8 @@ io.on("connection", (socket) => {
     }
   );
 
-  // this is the event handler for client2 sending answer signal to client1
-  //this is week 5 task part 1.
   socket.on(
-    "send answer-signal",
+    "sendAnswer",
     ({ callToUserSocketId, callFromUserSocketId, answerSignal }) => {
       console.log(
         "sending answer-signal from",
@@ -49,5 +48,11 @@ io.on("connection", (socket) => {
       });
     }
   );
+
+  socket.on("declineCall", ({ callFromUserSocketId }) => {
+    console.log("Call declined by", callFromUserSocketId);
+    io.to(callFromUserSocketId).emit("callDeclined");
+  });
 });
+
 server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

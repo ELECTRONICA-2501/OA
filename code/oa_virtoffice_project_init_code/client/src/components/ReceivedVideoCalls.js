@@ -11,6 +11,7 @@ function ReceivedVideoCalls({
   const peerRef = useRef(null);
   const videoRef = useRef(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [isCallAccepted, setIsCallAccepted] = useState(false); // State to handle call acceptance
 
   const createPeer = useCallback(
     (othersSocketId, mySocketId, myStream, webrtcSocket, offerSignal) => {
@@ -21,6 +22,7 @@ function ReceivedVideoCalls({
       });
 
       peer.on("signal", (signal) => {
+        console.log("Sending answer signal:", signal);
         webrtcSocket.emit("sendAnswer", {
           callFromUserSocketId: othersSocketId,
           callToUserSocketId: mySocketId,
@@ -29,6 +31,7 @@ function ReceivedVideoCalls({
       });
 
       peer.on("stream", (stream) => {
+        console.log("Received remote stream:", stream);
         setRemoteStream(stream); // Save the remote stream to state
       });
 
@@ -39,21 +42,38 @@ function ReceivedVideoCalls({
     []
   );
 
+  const acceptCall = () => {
+    setIsCallAccepted(true);
+  };
+
+  const declineCall = () => {
+    webrtcSocket.emit("declineCall", { callFromUserSocketId: mySocketId });
+  };
+
   useEffect(() => {
-    peerRef.current = createPeer(
-      othersSocketId,
-      mySocketId,
-      myStream,
-      webrtcSocket,
-      offerSignal
-    );
+    if (isCallAccepted) {
+      peerRef.current = createPeer(
+        othersSocketId,
+        mySocketId,
+        myStream,
+        webrtcSocket,
+        offerSignal
+      );
+    }
 
     return () => {
       if (peerRef.current) {
         peerRef.current.destroy();
       }
     };
-  }, [mySocketId, myStream, othersSocketId, webrtcSocket, offerSignal]);
+  }, [
+    isCallAccepted,
+    mySocketId,
+    myStream,
+    othersSocketId,
+    webrtcSocket,
+    offerSignal,
+  ]);
 
   useEffect(() => {
     if (videoRef.current && remoteStream) {
@@ -61,35 +81,17 @@ function ReceivedVideoCalls({
     }
   }, [remoteStream]);
 
+  if (!isCallAccepted) {
+    return (
+      <div>
+        <p>Incoming Call</p>
+        <button onClick={acceptCall}>Accept</button>
+        <button onClick={declineCall}>Decline</button>
+      </div>
+    );
+  }
+
   return <video ref={videoRef} autoPlay playsInline />;
-
-  /* Old Code:
-
-  // const peerRef = useRef(null);
-  // const [otherStream, setOtherStream] = useState(null);
-
-  // const createPeer = useCallback(
-  //   (othersSocketId, mySocketId, myStream, webrtcSocket, offerSignal) => {
-  //     const peer = new Peer({
-  //       initiator: false,
-  //       stream: myStream,
-  //       trickle: false,
-  //     });
-
-  //     peer.on("signal", (signal) => {
-  //       webrtcSocket.emit("sendAnswer", {callFromUserSocketId: othersSocketId,callToUserSocketId: mySocketId,answerSignal: signal,}); //webscoket sends answer to server
-  //     });
-
-  //     peer.on("stream", (stream) => {
-  //       navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
-  //         setOtherStream(stream);
-  //     });
-
-  //     peer.signal(offerSignal); //this tell the peer we received the offer signal, fired right after the peer.on("signal", (signal) => {}) is created. only in received video calls.
-  //       return peer;
-  //     }, []);
-
-  */
 }
 
 export default ReceivedVideoCalls;
