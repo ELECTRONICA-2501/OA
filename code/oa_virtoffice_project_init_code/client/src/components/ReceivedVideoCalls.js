@@ -9,8 +9,14 @@ function ReceivedVideoCalls({
   offerSignal,
 }) {
   const peerRef = useRef(null);
-  const videoRef = useRef(null);
+  //const videoRef = useRef(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const setVideoNode = useCallback(
+    (videoNode) => {
+      videoNode && (videoNode.srcObject = remoteStream);
+    },
+    [remoteStream]
+  );
 
   const createPeer = useCallback(
     (othersSocketId, mySocketId, myStream, webrtcSocket, offerSignal) => {
@@ -28,12 +34,13 @@ function ReceivedVideoCalls({
         });
       });
 
+      /*
       peer.on("stream", (stream) => {
         setRemoteStream(stream); // Save the remote stream to state
       });
+      */
 
       peer.signal(offerSignal);
-
       return peer;
     },
     []
@@ -47,21 +54,16 @@ function ReceivedVideoCalls({
       webrtcSocket,
       offerSignal
     );
-
-    return () => {
-      if (peerRef.current) {
-        peerRef.current.destroy();
+    webrtcSocket.on("receiveAnser", (payload) => {
+      if (payload.callFromUserSocketId === othersSocketId) {
+        peerRef.current.signal(payload.answerSignal);
       }
-    };
-  }, [mySocketId, myStream, othersSocketId, webrtcSocket, offerSignal]);
-
-  useEffect(() => {
-    if (videoRef.current && remoteStream) {
-      videoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream]);
-
-  return <video ref={videoRef} autoPlay playsInline />;
+    });
+    peerRef.current.on("stream", (stream) => {
+      setRemoteStream(stream);
+    });
+  }, [mySocketId, myStream, othersSocketId, webrtcSocket]);
+  return <> </>;
 
   /* Old Code:
 
