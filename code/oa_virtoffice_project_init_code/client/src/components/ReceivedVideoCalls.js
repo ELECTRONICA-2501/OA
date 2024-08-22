@@ -9,9 +9,17 @@ function ReceivedVideoCalls({
   offerSignal,
 }) {
   const peerRef = useRef(null);
-  const videoRef = useRef(null);
   const [remoteStream, setRemoteStream] = useState(null);
-  const [isCallAccepted, setIsCallAccepted] = useState(false); // State to handle call acceptance
+  const [isCallAccepted, setIsCallAccepted] = useState(false);
+
+  const setVideoNode = useCallback(
+    (videoNode) => {
+      if (videoNode && remoteStream) {
+        videoNode.srcObject = remoteStream;
+      }
+    },
+    [remoteStream]
+  );
 
   const createPeer = useCallback(
     (othersSocketId, mySocketId, myStream, webrtcSocket, offerSignal) => {
@@ -32,11 +40,10 @@ function ReceivedVideoCalls({
 
       peer.on("stream", (stream) => {
         console.log("Received remote stream:", stream);
-        setRemoteStream(stream); // Save the remote stream to state
+        setRemoteStream(stream);
       });
 
       peer.signal(offerSignal);
-
       return peer;
     },
     []
@@ -59,12 +66,20 @@ function ReceivedVideoCalls({
         webrtcSocket,
         offerSignal
       );
+
+      webrtcSocket.on("receiveAnswer", (payload) => {
+        console.log("Received answer signal:", payload);
+        if (payload.callFromUserSocketId === othersSocketId) {
+          peerRef.current.signal(payload.answerSignal);
+        }
+      });
     }
 
     return () => {
       if (peerRef.current) {
         peerRef.current.destroy();
       }
+      webrtcSocket.off("receiveAnswer");
     };
   }, [
     isCallAccepted,
@@ -74,12 +89,6 @@ function ReceivedVideoCalls({
     webrtcSocket,
     offerSignal,
   ]);
-
-  useEffect(() => {
-    if (videoRef.current && remoteStream) {
-      videoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream]);
 
   if (!isCallAccepted) {
     return (
@@ -91,7 +100,13 @@ function ReceivedVideoCalls({
     );
   }
 
-  return <video ref={videoRef} autoPlay playsInline />;
+  return (
+    <>
+      {remoteStream && (
+        <video width="200px" ref={setVideoNode} autoPlay={true} />
+      )}
+    </>
+  );
 }
 
 export default ReceivedVideoCalls;
