@@ -8,8 +8,22 @@ import MyCharacter from "./MyCharacter";
 import { MAP_DIMENSIONS, TILE_SIZE, MAP_TILE_IMAGES } from "./mapConstants";
 import OtherCharacters from "./OtherCharacters";
 import VideoCalls from "./VideoCalls";
+import MyVideo from "./MyVideo";
 
 const Office = ({ mapImagesLoaded, gameStatus, webrtcSocket }) => {
+  const [myStream, setMyStream] = useState(null);
+
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
+      .then((stream) => {
+        setMyStream(stream);
+      })
+      .catch((error) => {
+        console.error("Error accessing media devices:", error);
+      });
+  }, []);
+
   const width = MAP_DIMENSIONS.COLS * TILE_SIZE;
   const height = MAP_DIMENSIONS.ROWS * TILE_SIZE;
   const context = useContext(CanvasContext);
@@ -44,6 +58,7 @@ const Office = ({ mapImagesLoaded, gameStatus, webrtcSocket }) => {
           <VideoCalls webrtcSocket={webrtcSocket} />
         </>
       )}
+      {myStream && <MyVideo myStream={myStream} />}
     </>
   );
 };
