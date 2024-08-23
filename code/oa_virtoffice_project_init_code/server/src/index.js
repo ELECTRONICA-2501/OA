@@ -16,7 +16,6 @@ app.get("/", (req, res) => {
 
 io.on("connection", (socket) => {
   socket.emit("me", socket.id);
-
   socket.on(
     "sendOffer",
     ({ callToUserSocketId, callFromUserSocketId, offerSignal }) => {
@@ -32,7 +31,6 @@ io.on("connection", (socket) => {
       });
     }
   );
-
   socket.on(
     "sendAnswer",
     ({ callToUserSocketId, callFromUserSocketId, answerSignal }) => {

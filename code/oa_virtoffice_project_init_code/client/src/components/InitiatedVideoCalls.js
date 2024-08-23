@@ -11,15 +11,6 @@ function InitiatedVideoCalls({
   const [remoteStream, setRemoteStream] = useState(null);
   const [callRejected, setCallRejected] = useState(false);
 
-  const setVideoNode = useCallback(
-    (videoNode) => {
-      if (videoNode && remoteStream) {
-        videoNode.srcObject = remoteStream;
-      }
-    },
-    [remoteStream]
-  );
-
   const createPeer = useCallback(
     (othersSocketId, mySocketId, myStream, webrtcSocket) => {
       const peer = new Peer({
@@ -30,7 +21,7 @@ function InitiatedVideoCalls({
 
       peer.on("signal", (signal) => {
         console.log("Initiating call, sending offer signal:", signal);
-        webrtcSocket.emit("sendOffer", {
+        webrtcSocket.current.emit("sendOffer", {
           callToUserSocketId: othersSocketId,
           callFromUserSocketId: mySocketId,
           offerSignal: signal,
@@ -38,7 +29,6 @@ function InitiatedVideoCalls({
       });
 
       peer.on("stream", (stream) => {
-        console.log("Received remote stream:", stream);
         setRemoteStream(stream);
       });
 
@@ -55,28 +45,42 @@ function InitiatedVideoCalls({
       webrtcSocket
     );
 
-    webrtcSocket.on(
-      "receiveClient2sAnswerSignalFromServer",
-      ({ callFromUserSocketId, answerSignal }) => {
-        console.log("Received answer signal from server:", answerSignal);
-        if (callRejected) return;
+    const handleAnswerSignal = ({ callFromUserSocketId, answerSignal }) => {
+      console.log("Received answer signal from server:", answerSignal);
+      if (!callRejected && peerRef.current) {
         peerRef.current.signal(answerSignal);
       }
-    );
+    };
 
-    webrtcSocket.on("callDeclined", () => {
+    const handleCallDeclined = () => {
       setCallRejected(true);
       console.log("The call was declined");
-    });
+    };
+
+    webrtcSocket.on(
+      "receiveClient2sAnswerSignalFromServer",
+      handleAnswerSignal
+    );
+    webrtcSocket.on("callDeclined", handleCallDeclined);
 
     return () => {
-      webrtcSocket.off("receiveClient2sAnswerSignalFromServer");
-      webrtcSocket.off("callDeclined");
+      webrtcSocket.off(
+        "receiveClient2sAnswerSignalFromServer",
+        handleAnswerSignal
+      );
+      webrtcSocket.off("callDeclined", handleCallDeclined);
       if (peerRef.current) {
         peerRef.current.destroy();
       }
     };
-  }, [mySocketId, myStream, othersSocketId, webrtcSocket, callRejected]);
+  }, [
+    mySocketId,
+    myStream,
+    othersSocketId,
+    webrtcSocket,
+    callRejected,
+    createPeer,
+  ]);
 
   if (callRejected) {
     return <p>The call was rejected</p>;
@@ -85,7 +89,14 @@ function InitiatedVideoCalls({
   return (
     <>
       {remoteStream && (
-        <video width="200px" ref={setVideoNode} autoPlay={true} />
+        <video
+          width="200px"
+          autoPlay
+          playsInline
+          ref={(video) => {
+            if (video) video.srcObject = remoteStream;
+          }}
+        />
       )}
     </>
   );

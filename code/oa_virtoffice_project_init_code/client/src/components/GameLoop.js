@@ -4,19 +4,32 @@ import CanvasContext from "./CanvasContext";
 import { MOVE_DIRECTIONS, MAP_DIMENSIONS, TILE_SIZE } from "./mapConstants";
 import { MY_CHARACTER_INIT_CONFIG } from "./characterConstants";
 import { checkMapCollision } from "./utils";
-import { update } from "./slices/allCharactersSlice"; // Correctly import the update action
+import { update } from "./slices/allCharactersSlice";
 import { ref, set } from "firebase/database";
 import { firebaseDatabase } from "../firebase/firebase";
 import FirebaseListener from "./FirebaseListener";
+import InitiatedVideoCalls from "./InitiatedVideoCalls"; // Import InitiatedVideoCalls
+import Peer from "simple-peer";
+import webrtcSocket from "../App";
 
 const GameLoop = ({ children, allCharactersData, updateAllCharactersData }) => {
   const canvasRef = useRef(null);
   const [context, setContext] = useState(null);
   const [nearbyCharacter, setNearbyCharacter] = useState(null);
   const [isInitiatingCall, setIsInitiatingCall] = useState(false);
+  const [currentCallUserId, setCurrentCallUserId] = useState(null); // Track the user being called
+  const [remoteStream, setRemoteStream] = useState(null);
+
+  const setVideoNode = useCallback(
+    (videoNode) => {
+      if (videoNode && remoteStream) {
+        videoNode.srcObject = remoteStream;
+      }
+    },
+    [remoteStream]
+  );
 
   useEffect(() => {
-    // frameCount used for re-rendering child components
     setContext({ canvas: canvasRef.current.getContext("2d"), frameCount: 0 });
   }, [setContext]);
 
@@ -108,6 +121,7 @@ const GameLoop = ({ children, allCharactersData, updateAllCharactersData }) => {
   const handleInitiateCall = (otherUserId) => {
     console.log("Initiating call with: ", otherUserId);
     setIsInitiatingCall(true);
+    setCurrentCallUserId(otherUserId);
   };
 
   return (
@@ -124,6 +138,14 @@ const GameLoop = ({ children, allCharactersData, updateAllCharactersData }) => {
         <button onClick={() => handleInitiateCall(nearbyCharacter)}>
           Initiate Call with {allCharactersData[nearbyCharacter].name}
         </button>
+      )}
+      {isInitiatingCall && currentCallUserId && (
+        <InitiatedVideoCalls
+          mySocketId={mycharacterData.socketId}
+          myStream={remoteStream}
+          othersSocketId={currentCallUserId}
+          webrtcSocket={webrtcSocket} // Pass your WebSocket instance here
+        />
       )}
     </CanvasContext.Provider>
   );

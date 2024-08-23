@@ -9,17 +9,8 @@ function ReceivedVideoCalls({
   offerSignal,
 }) {
   const peerRef = useRef(null);
-  const [remoteStream, setRemoteStream] = useState(null);
+  const [otherStream, setOtherStream] = useState(null);
   const [isCallAccepted, setIsCallAccepted] = useState(false);
-
-  const setVideoNode = useCallback(
-    (videoNode) => {
-      if (videoNode && remoteStream) {
-        videoNode.srcObject = remoteStream;
-      }
-    },
-    [remoteStream]
-  );
 
   const createPeer = useCallback(
     (othersSocketId, mySocketId, myStream, webrtcSocket, offerSignal) => {
@@ -39,11 +30,11 @@ function ReceivedVideoCalls({
       });
 
       peer.on("stream", (stream) => {
-        console.log("Received remote stream:", stream);
-        setRemoteStream(stream);
+        setOtherStream(stream);
       });
 
       peer.signal(offerSignal);
+
       return peer;
     },
     []
@@ -88,6 +79,7 @@ function ReceivedVideoCalls({
     othersSocketId,
     webrtcSocket,
     offerSignal,
+    createPeer,
   ]);
 
   if (!isCallAccepted) {
@@ -102,8 +94,16 @@ function ReceivedVideoCalls({
 
   return (
     <>
-      {remoteStream && (
-        <video width="200px" ref={setVideoNode} autoPlay={true} />
+      {otherStream && (
+        <video
+          id="videoNode"
+          width="200px"
+          autoPlay
+          playsInline
+          ref={(video) => {
+            if (video) video.srcObject = otherStream;
+          }}
+        />
       )}
     </>
   );

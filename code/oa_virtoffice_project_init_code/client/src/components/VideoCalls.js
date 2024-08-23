@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { MY_CHARACTER_INIT_CONFIG } from "./characterConstants";
 import InitiatedVideoCalls from "./InitiatedVideoCalls";
 import ReceivedVideoCalls from "./ReceivedVideoCalls";
-import { webrtcSocket } from "../App";
+import webrtcSocket from "../App";
 
 function VideoCalls({ myCharacterData, otherCharactersData }) {
   const [myStream, setMyStream] = useState(); // This is the stream of my video
