@@ -10,15 +10,11 @@ function ReceivedVideoCalls({
 }) {
   const peerRef = useRef(null);
   const [remoteStream, setRemoteStream] = useState(null);
-  const setVideoNode = useCallback(
-    (videoNode) => {
-      videoNode && (videoNode.srcObject = remoteStream);
-    },
-    [remoteStream]
-  );
+  const [isCallAccepted, setIsCallAccepted] = useState(false);
 
   const createPeer = useCallback(
     (othersSocketId, mySocketId, myStream, webrtcSocket, offerSignal) => {
+      console.log("Creating peer for received call");
       const peer = new Peer({
         initiator: false,
         stream: myStream,
@@ -26,41 +22,105 @@ function ReceivedVideoCalls({
       });
 
       peer.on("signal", (signal) => {
+        console.log("Sending answer signal");
         webrtcSocket.emit("sendAnswer", {
           callFromUserSocketId: othersSocketId,
           callToUserSocketId: mySocketId,
           answerSignal: signal,
         });
       });
+
+      peer.on("stream", (stream) => {
+        console.log("Received remote stream");
+        setRemoteStream(stream);
+      });
+
       peer.signal(offerSignal);
       return peer;
     },
     []
   );
 
+  const acceptCall = () => {
+    console.log("Accepting call");
+    setIsCallAccepted(true);
+  };
+
+  const declineCall = () => {
+    console.log("Declining call");
+    webrtcSocket.emit("declineCall", { callFromUserSocketId: othersSocketId });
+  };
+
   useEffect(() => {
-    peerRef.current = createPeer(
-      othersSocketId,
-      mySocketId,
-      myStream,
-      webrtcSocket,
-      offerSignal
-    );
-    webrtcSocket.on("receiveAnser", (payload) => {
-      if (payload.callFromUserSocketId === othersSocketId) {
-        peerRef.current.signal(payload.answerSignal);
+    console.log("Received call from", othersSocketId);
+    if (isCallAccepted) {
+      peerRef.current = createPeer(
+        othersSocketId,
+        mySocketId,
+        myStream,
+        webrtcSocket,
+        offerSignal
+      );
+    }
+
+    return () => {
+      if (peerRef.current) {
+        peerRef.current.destroy();
       }
+    };
+  }, [
+    isCallAccepted,
+    mySocketId,
+    myStream,
+    othersSocketId,
+    webrtcSocket,
+    offerSignal,
+    createPeer,
+  ]);
+
+  useEffect(() => {
+    webrtcSocket.on("endCall", () => {
+      console.log("Call ended by the other user");
+      if (peerRef.current) {
+        peerRef.current.destroy();
+      }
+      setIsCallAccepted(false);
+      setRemoteStream(null);
     });
-    peerRef.current.on("stream", (stream) => {
-      setRemoteStream(stream);
-    });
-  }, [mySocketId, myStream, othersSocketId, webrtcSocket]);
+
+    return () => {
+      webrtcSocket.off("endCall");
+    };
+  }, [webrtcSocket]);
+
+  if (!isCallAccepted) {
+    return (
+      <div>
+        <p>Incoming Call from {othersSocketId}</p>
+        <button onClick={acceptCall}>Accept</button>
+        <button onClick={declineCall}>Decline</button>
+      </div>
+    );
+  }
+
   return (
-    <>
+    <div>
       {remoteStream && (
-        <video width="200px" ref={setVideoNode} autoPlay={true} />
+        <video
+          width="200px"
+          autoPlay
+          playsInline
+          ref={(video) => {
+            if (video) video.srcObject = remoteStream;
+          }}
+        />
       )}
-    </>
+      <button
+        onClick={() => webrtcSocket.emit("endCall", { to: othersSocketId })}
+      >
+        End Call
+      </button>
+    </div>
   );
 }
 

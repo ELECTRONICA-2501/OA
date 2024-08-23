@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import { connect } from "react-redux";
 import Grid from "./Grid";
 import ImagesBuffer from "./ImagesBuffer";
@@ -7,6 +7,7 @@ import CanvasContext from "./CanvasContext";
 import MyCharacter from "./MyCharacter";
 import { MAP_DIMENSIONS, TILE_SIZE, MAP_TILE_IMAGES } from "./mapConstants";
 import OtherCharacters from "./OtherCharacters";
+import VideoCalls from "./VideoCalls";
 
 const Office = ({ mapImagesLoaded, gameStatus, webrtcSocket }) => {
   const width = MAP_DIMENSIONS.COLS * TILE_SIZE;
@@ -36,15 +37,20 @@ const Office = ({ mapImagesLoaded, gameStatus, webrtcSocket }) => {
           </Grid>
         </>
       )}
-      {gameStatus.mapLoaded && <MyCharacter webrtcSocket={webrtcSocket} />}
-      {gameStatus.mapLoaded && <OtherCharacters />}
+      {gameStatus.mapLoaded && (
+        <>
+          <MyCharacter webrtcSocket={webrtcSocket} />
+          <OtherCharacters />
+          <VideoCalls webrtcSocket={webrtcSocket} />
+        </>
+      )}
     </>
   );
 };
 
-const mapStateToProps = ({ mapImagesLoaded, gameStatus }) => ({
-  mapImagesLoaded,
-  gameStatus,
+const mapStateToProps = (state) => ({
+  mapImagesLoaded: state.mapImagesLoaded,
+  gameStatus: state.gameStatus,
 });
 
 export default connect(mapStateToProps)(Office);

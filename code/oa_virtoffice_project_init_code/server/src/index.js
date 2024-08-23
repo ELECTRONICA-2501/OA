@@ -10,44 +10,65 @@ const io = require("socket.io")(server, {
 
 app.use(cors());
 const PORT = process.env.PORT || 8080;
+
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
-// this is the event handler for client1 sending offer signal to client2
+
 io.on("connection", (socket) => {
+  console.log("New client connected:", socket.id);
   socket.emit("me", socket.id);
+
+  socket.on("initiateCall", ({ to }) => {
+    console.log("Initiating call from", socket.id, "to", to);
+    socket.to(to).emit("incomingCall", { from: socket.id });
+  });
+
   socket.on(
-    "send offer-signal",
+    "sendOffer",
     ({ callToUserSocketId, callFromUserSocketId, offerSignal }) => {
       console.log(
-        "sending offer-signal from",
+        "Sending offer from",
         callFromUserSocketId,
         "to",
         callToUserSocketId
       );
-      io.to(callToUserSocketId).emit("receive-offer-signal", {
-        callFromUserSocketId,
-        offerSignal,
+      io.to(callToUserSocketId).emit("incomingCall", {
+        from: callFromUserSocketId,
+        offerSignal: offerSignal,
       });
     }
   );
 
-  // this is the event handler for client2 sending answer signal to client1
-  //this is week 5 task part 1.
   socket.on(
-    "send answer-signal",
-    ({ callToUserSocketId, callFromUserSocketId, answerSignal }) => {
+    "sendAnswer",
+    ({ callFromUserSocketId, callToUserSocketId, answerSignal }) => {
       console.log(
-        "sending answer-signal from",
-        callFromUserSocketId,
+        "Sending answer from",
+        callToUserSocketId,
         "to",
-        callToUserSocketId
+        callFromUserSocketId
       );
-      io.to(callToUserSocketId).emit("receive-answer-signal", {
-        callFromUserSocketId,
-        answerSignal,
+      io.to(callFromUserSocketId).emit("receiveAnswer", {
+        from: callToUserSocketId,
+        answerSignal: answerSignal,
       });
     }
   );
+
+  socket.on("declineCall", ({ callFromUserSocketId }) => {
+    console.log("Call declined by", socket.id);
+    io.to(callFromUserSocketId).emit("callDeclined");
+  });
+
+  socket.on("endCall", ({ to }) => {
+    console.log("Ending call from", socket.id, "to", to);
+    io.to(to).emit("endCall");
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
 });
+
 server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
