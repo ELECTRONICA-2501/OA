@@ -12,6 +12,7 @@ import MyVideo from "./MyVideo";
 
 const Office = ({ mapImagesLoaded, gameStatus, webrtcSocket }) => {
   const [myStream, setMyStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
 
   useEffect(() => {
     navigator.mediaDevices
@@ -55,10 +56,13 @@ const Office = ({ mapImagesLoaded, gameStatus, webrtcSocket }) => {
         <>
           <MyCharacter webrtcSocket={webrtcSocket} />
           <OtherCharacters />
-          <VideoCalls webrtcSocket={webrtcSocket} />
+          <VideoCalls
+            webrtcSocket={webrtcSocket}
+            setRemoteStream={setRemoteStream}
+          />
         </>
       )}
-      {myStream && <MyVideo myStream={myStream} />}
+      {myStream && <MyVideo myStream={myStream} remoteStream={remoteStream} />}
     </>
   );
 };

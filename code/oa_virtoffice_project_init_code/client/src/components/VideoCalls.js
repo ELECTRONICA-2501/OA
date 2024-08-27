@@ -1,145 +1,124 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { connect } from "react-redux";
 import { MY_CHARACTER_INIT_CONFIG } from "./characterConstants";
 import { webrtcSocket } from "../App";
 
-function VideoCalls({ myCharacterData, otherCharactersData, webrtcSocket }) {
-  const [myStream, setMyStream] = useState(null);
-  const [peers, setPeers] = useState({});
+const VideoCalls = ({ webrtcSocket, setRemoteStream }) => {
   const peerConnections = useRef({});
+  const myStream = useRef(null);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
 
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
-        setMyStream(stream);
-      })
-      .catch((error) => {
-        console.error("Error accessing media devices:", error);
-      });
-  }, []);
-
-  useEffect(() => {
-    webrtcSocket.on("user-joined", ({ userId }) => {
-      const peerConnection = new RTCPeerConnection();
-      peerConnections.current[userId] = peerConnection;
-
-      peerConnection.ontrack = (event) => {
-        const [stream] = event.streams;
-        setPeers((prevPeers) => ({
-          ...prevPeers,
-          [userId]: { userId, stream },
-        }));
-      };
-
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          webrtcSocket.emit("ice-candidate", {
-            to: userId,
-            candidate: event.candidate,
-          });
+        myStream.current = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
         }
-      };
 
-      myStream.getTracks().forEach((track) => {
-        peerConnection.addTrack(track, myStream);
-      });
+        webrtcSocket.on("user-joined", ({ userId }) => {
+          const peerConnection = new RTCPeerConnection();
+          peerConnections.current[userId] = peerConnection;
 
-      peerConnection
-        .createOffer()
-        .then((offer) => peerConnection.setLocalDescription(offer))
-        .then(() => {
-          webrtcSocket.emit("offer", {
-            to: userId,
-            offer: peerConnection.localDescription,
+          peerConnection.ontrack = (event) => {
+            const [stream] = event.streams;
+            setRemoteStream(stream);
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = stream;
+            }
+          };
+
+          peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+              webrtcSocket.emit("ice-candidate", {
+                to: userId,
+                candidate: event.candidate,
+              });
+            }
+          };
+
+          myStream.current.getTracks().forEach((track) => {
+            peerConnection.addTrack(track, myStream.current);
           });
+
+          peerConnection
+            .createOffer()
+            .then((offer) => peerConnection.setLocalDescription(offer))
+            .then(() => {
+              webrtcSocket.emit("offer", {
+                to: userId,
+                offer: peerConnection.localDescription,
+              });
+            });
         });
-    });
 
-    webrtcSocket.on("offer", ({ from, offer }) => {
-      const peerConnection = new RTCPeerConnection();
-      peerConnections.current[from] = peerConnection;
+        webrtcSocket.on("offer", ({ from, offer }) => {
+          const peerConnection = new RTCPeerConnection();
+          peerConnections.current[from] = peerConnection;
 
-      peerConnection.ontrack = (event) => {
-        const [stream] = event.streams;
-        setPeers((prevPeers) => ({
-          ...prevPeers,
-          [from]: { userId: from, stream },
-        }));
-      };
+          peerConnection.ontrack = (event) => {
+            const [stream] = event.streams;
+            setRemoteStream(stream);
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = stream;
+            }
+          };
 
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          webrtcSocket.emit("ice-candidate", {
-            to: from,
-            candidate: event.candidate,
+          peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+              webrtcSocket.emit("ice-candidate", {
+                to: from,
+                candidate: event.candidate,
+              });
+            }
+          };
+
+          myStream.current.getTracks().forEach((track) => {
+            peerConnection.addTrack(track, myStream.current);
           });
-        }
-      };
 
-      myStream.getTracks().forEach((track) => {
-        peerConnection.addTrack(track, myStream);
-      });
-
-      peerConnection
-        .setRemoteDescription(new RTCSessionDescription(offer))
-        .then(() => peerConnection.createAnswer())
-        .then((answer) => peerConnection.setLocalDescription(answer))
-        .then(() => {
-          webrtcSocket.emit("answer", {
-            to: from,
-            answer: peerConnection.localDescription,
-          });
+          peerConnection
+            .setRemoteDescription(new RTCSessionDescription(offer))
+            .then(() => peerConnection.createAnswer())
+            .then((answer) => peerConnection.setLocalDescription(answer))
+            .then(() => {
+              webrtcSocket.emit("answer", {
+                to: from,
+                answer: peerConnection.localDescription,
+              });
+            });
         });
-    });
 
-    webrtcSocket.on("answer", ({ from, answer }) => {
-      peerConnections.current[from].setRemoteDescription(
-        new RTCSessionDescription(answer)
-      );
-    });
+        webrtcSocket.on("answer", ({ from, answer }) => {
+          peerConnections.current[from].setRemoteDescription(
+            new RTCSessionDescription(answer)
+          );
+        });
 
-    webrtcSocket.on("ice-candidate", ({ from, candidate }) => {
-      peerConnections.current[from].addIceCandidate(
-        new RTCIceCandidate(candidate)
-      );
-    });
+        webrtcSocket.on("ice-candidate", ({ from, candidate }) => {
+          const peerConnection = peerConnections.current[from];
+          if (peerConnection) {
+            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          }
+        });
+      });
 
     return () => {
-      webrtcSocket.off("user-joined");
-      webrtcSocket.off("offer");
-      webrtcSocket.off("answer");
-      webrtcSocket.off("ice-candidate");
+      Object.values(peerConnections.current).forEach((peerConnection) => {
+        peerConnection.close();
+      });
+      peerConnections.current = {};
     };
-  }, [webrtcSocket, myStream]);
+  }, [webrtcSocket, setRemoteStream]);
 
   return (
     <div>
-      {Object.values(peers).map((peer) => (
-        <video
-          key={peer.userId}
-          width="200px"
-          autoPlay
-          playsInline
-          ref={(video) => {
-            if (video) video.srcObject = peer.stream;
-          }}
-        />
-      ))}
+      <video ref={localVideoRef} autoPlay muted style={{ width: "45%" }} />
+      <video ref={remoteVideoRef} autoPlay style={{ width: "45%" }} />
     </div>
   );
-}
-
-const mapStateToProps = (state) => {
-  const myCharacterData =
-    state.allCharacters.users[MY_CHARACTER_INIT_CONFIG.id];
-  const otherCharactersData = Object.keys(state.allCharacters.users)
-    .filter((id) => id !== MY_CHARACTER_INIT_CONFIG.id)
-    .reduce((filteredObj, key) => {
-      filteredObj[key] = state.allCharacters.users[key];
-      return filteredObj;
-    }, {});
-  return { myCharacterData, otherCharactersData };
 };
 
-export default connect(mapStateToProps)(VideoCalls);
+export default VideoCalls;

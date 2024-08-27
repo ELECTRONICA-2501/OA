@@ -1,18 +1,27 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
-function MyVideo({ myStream }) {
-  const setVideoNode = useCallback(
-    (videoNode) => {
-      videoNode && (videoNode.srcObject = myStream);
-    },
-    [myStream]
-  );
+const MyVideo = ({ myStream, remoteStream }) => {
+  const myVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+
+  useEffect(() => {
+    if (myVideoRef.current) {
+      myVideoRef.current.srcObject = myStream;
+    }
+  }, [myStream]);
+
+  useEffect(() => {
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
 
   return (
-    <>
-      {myStream && <video width="200px" ref={setVideoNode} autoPlay={true} />}
-    </>
+    <div className="video-container">
+      <video ref={myVideoRef} autoPlay playsInline muted />
+      <video ref={remoteVideoRef} autoPlay playsInline />
+    </div>
   );
-}
+};
 
 export default MyVideo;
