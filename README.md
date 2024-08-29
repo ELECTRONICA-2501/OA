@@ -1,5 +1,3 @@
-<a name = "readme-top"></a>
-
 #Virtual Office WebRTC Project
 ##The Build Fellowship by Open Avenues
 
