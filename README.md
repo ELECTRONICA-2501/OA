@@ -1,6 +1,16 @@
 #Virtual Office WebRTC Project
 ##The Build Fellowship by Open Avenues
 
+### Web App Project
+
+### Architecture
+
+### Launching App
+
+### Prerequisites needed
+
+### Installation
+
 ### Built With
 
 * [![JavaScript][JavaScript-shield]][JavaScript-url]
