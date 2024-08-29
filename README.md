@@ -5,9 +5,9 @@
 
 ## Architecture
 ### Client side
-![Client Code Architecture][images_OA/WebRTC Client.png]
+![Client Code Architecture][web-arch]
 ### Server side
-![Server Code Architecture][images_OA/Server Side WebRTC.png]
+![Server Code Architecture][serv-arch]
 ### Prerequisites
 * Node.js
 * npm package manager
