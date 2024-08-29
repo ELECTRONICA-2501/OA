@@ -1,16 +1,19 @@
 #Virtual Office WebRTC Project
 ##The Build Fellowship by Open Avenues
 
-### Web App Project + Demo
+## Web App Project + Demo
 
-### Architecture
-
+## Architecture
+### Client side
+![Client Code Architecture](images_OA/WebRTC Client.png)
+### Server side
+![Server Code Architecture](images_OA/Server Side WebRTC.png)
 ### Prerequisites
 * Node.js
 * npm package manager
 * Browser (preferably chrome or safari)
   
-### Launching App
+## Launching App
 1. Install NPM packages for server
    ```sh
    cd server && npm install
@@ -29,7 +32,7 @@
    ```
 5. Open a browser window and go to http://localhost:3000/
 
-### Built With
+## Built With
 
 * [![JavaScript][JavaScript-shield]][JavaScript-url]
 * [![Node_js][Node_js-shield]][Node_js-url]
@@ -41,7 +44,7 @@
 
 <!-- MD Links & Images -->
 [web-arch]: images_OA/WebRTC Client.png
-[serv-arch]: 
+[serv-arch]: images_OA/Server Side WebRTC.png
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
 [React-url]: https://reactjs.org/
 [JavaScript-shield]: https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E
