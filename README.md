@@ -5,9 +5,9 @@
 
 ## Architecture
 ### Client side
-![Client Code Architecture][web-arch]
+![Client Code Architecture](images_OA/WebRTC Client.png)
 ### Server side
-![Server Code Architecture][serv-arch]
+![Server Code Architecture][images_OA/Server Side WebRTC.png]
 ### Prerequisites
 * Node.js
 * npm package manager
@@ -43,8 +43,7 @@
 * [![Peer_JS][Peer_JS-shield]][Peer_JS-url]
 
 <!-- MD Links & Images -->
-[web-arch]: images_OA/WebRTC Client.png
-[serv-arch]: images_OA/Server Side WebRTC.png
+
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
 [React-url]: https://reactjs.org/
 [JavaScript-shield]: https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E
