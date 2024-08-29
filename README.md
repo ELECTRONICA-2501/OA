@@ -40,7 +40,8 @@
 * [![Peer_JS][Peer_JS-shield]][Peer_JS-url]
 
 <!-- MD Links & Images -->
-[web-arch]: 
+[web-arch]: images_OA/WebRTC Client.png
+[serv-arch]: 
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
 [React-url]: https://reactjs.org/
 [JavaScript-shield]: https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E
