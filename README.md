@@ -15,18 +15,18 @@ The Virtual Office Web application is a web app that allows users on a 2D board 
 * [![Socket_IO][Socket_IO-shield]][Socket_IO-url]
 * [![Peer_JS][Peer_JS-shield]][Peer_JS-url]
 
-### Loom Demo + Presentation Link 
+## Loom Demo + Presentation Link 
 #### Check out the following link for a presentation and demo at the end :)
  https://www.loom.com/share/c64fff055ec94d0bae7b4863a2b112a8?sid=53faedfe-4f3a-4a44-a937-2297b2a1109b
 
 ## Architecture
-### Client side
+### Client side 
 ![Client Code Architecture](images_OA/WebRTC%20Client.png)
 
 ### Server side
 ![Server Code Architecture](images_OA/Server%20Side%20WebRTC.png)
 
-### Prerequisites
+## Prerequisites
 * Node.js
 * npm package manager
 * Browser (preferably chrome or safari)
