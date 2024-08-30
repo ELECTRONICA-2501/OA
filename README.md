@@ -5,6 +5,13 @@
 
 The Virtual Office Web application is build with React and Node.js on the client side, while also using simple-peer API to facilitate the WebRTC connection between users. The application utilizes Node.js on the client side to enhance performance and interactivity, while Socket.IO powers the server side, providing real-time bidirectional communication to support user movements on the gameboard.
 
+### Loom Demo + Presentation Recording 
+<!-- Embed Local Video Here -->
+<video width="100%" height="auto" controls>
+  <source src="images_OA/Virtual Office Web App - 29 August 2024.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 ## Built With
 
 * [![React][React.js]][React-url]
