@@ -1,5 +1,5 @@
 # Virtual Office WebRTC Project
-![The Build Fellowship]()
+![The Build Fellowship](images_OA/BuildFellowshipLogo.png)
 
 ## Web App Project + Demo
 
