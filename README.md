@@ -8,9 +8,10 @@ The Virtual Office Web application is build with React and Node.js on the client
 ## Built With
 
 * [![React][React.js]][React-url]
+* * [![Firebase][Firebase-shield]][Firebase-url]
 * [![JavaScript][JavaScript-shield]][JavaScript-url]
+* [![React_Redux][React_Redux-shield]][React_Redux-url]
 * [![Node_js][Node_js-shield]][Node_js-url]
-* [![Firebase][Firebase-shield]][Firebase-url]
 * [![Socket_IO][Socket_IO-shield]][Socket_IO-url]
 * [![Peer_JS][Peer_JS-shield]][Peer_JS-url]
 
