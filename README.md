@@ -3,6 +3,8 @@
 
 ## Web App Project + Demo
 
+The Virtual Office Web application is build with React and Node.js on the client side, while also using simple-peer API to facilitate the WebRTC connection between users. The application utilizes Node.js on the client side to enhance performance and interactivity, while Socket.IO powers the server side, providing real-time bidirectional communication to support user movements on the gameboard.
+
 ## Architecture
 ### Client side
 ![Client Code Architecture](images_OA/WebRTC%20Client.png)
