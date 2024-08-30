@@ -1,5 +1,5 @@
 # Virtual Office WebRTC Project
-## The Build Fellowship by Open Avenues
+![The Build Fellowship]()
 
 ## Web App Project + Demo
 
